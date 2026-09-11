@@ -1,0 +1,7 @@
+/target/
+/node_modules/
+/web/pkg/
+/web/dist/
+/playwright-report/
+/test-results/
+.DS_Store

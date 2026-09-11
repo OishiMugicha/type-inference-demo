@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f3ec" />
+    <meta name="description" content="小さなML言語をRustで実装する、型推論と評価のプレイグラウンド。" />
+    <title>Tiny ML — 型推論の実験室</title>
+  </head>
+  <body>
+    <main>
+      <header class="page-header">
+        <div><p class="eyebrow">A LANGUAGE, FROM SCRATCH</p><h1>Tiny ML <span>型推論の実験室</span></h1></div>
+        <span class="runtime-label">Rust / WebAssembly</span>
+      </header>
+      <p class="intro">式を入力して、トークンから型と値まで。実装した段階から、結果を確かめられます。</p>
+      <section class="editor-panel" aria-labelledby="source-heading">
+        <div class="panel-heading"><h2 id="source-heading">ソースコード</h2><label class="sample-label">サンプル <select id="sample" aria-label="サンプル"></select></label></div>
+        <label class="sr-only" for="source">MLの式</label>
+        <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="input-help"></textarea>
+        <div class="editor-footer"><p id="input-help">Ctrl / ⌘ + Enter で実行</p><div class="actions"><button id="cancel" type="button" disabled>中止</button><button id="run" class="primary" type="button" disabled>実行する <span aria-hidden="true">→</span></button></div></div>
+      </section>
+      <p id="status" role="status" aria-live="polite">Wasmを読み込んでいます…</p>
+      <div id="results" class="results" aria-busy="false"></div>
+      <footer>整数・真偽値・関数・let多相 <span>すべての処理は、このブラウザの中で実行されます。</span></footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
