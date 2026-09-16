@@ -8,7 +8,6 @@ use tiny_ml_core::{
 };
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn literals_arithmetic_comparison_and_negation() {
     assert_type_eq(infer(&int(42)).unwrap(), T::Int);
     assert_type_eq(infer(&boolean(true)).unwrap(), T::Bool);
@@ -18,7 +17,6 @@ fn literals_arithmetic_comparison_and_negation() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn identity_and_higher_order_function() {
     assert_type_eq(
         infer(&fun("x", var("x"))).unwrap(),
@@ -32,7 +30,6 @@ fn identity_and_higher_order_function() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn let_polymorphism() {
     let expression = bind(
         "id",
@@ -47,7 +44,6 @@ fn let_polymorphism() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn lambda_parameter_is_monomorphic() {
     let expression = fun(
         "f",
@@ -64,7 +60,6 @@ fn lambda_parameter_is_monomorphic() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn let_does_not_generalize_environment_variables() {
     // fun x -> let y = x in let a = y 1 in y true
     let expression = fun(
@@ -82,7 +77,6 @@ fn let_does_not_generalize_environment_variables() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn conditional_types_and_errors() {
     assert_type_eq(
         infer(&branch(boolean(true), int(1), int(2))).unwrap(),
@@ -102,7 +96,6 @@ fn conditional_types_and_errors() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn unbound_variables_and_nonrecursive_let() {
     for expression in [var("missing"), bind("x", var("x"), var("x"))] {
         let error = infer(&expression).unwrap_err();
@@ -112,7 +105,6 @@ fn unbound_variables_and_nonrecursive_let() {
 }
 
 #[test]
-#[ignore = "exercise: inference; parser不要"]
 fn self_application_has_no_finite_type() {
     assert_eq!(
         infer(&fun("x", apply(var("x"), var("x"))))
@@ -120,4 +112,22 @@ fn self_application_has_no_finite_type() {
             .kind,
         ErrorKind::InfiniteType
     );
+}
+
+#[test]
+fn generalization_resolves_environment_substitutions() {
+    let source = "fun f -> let g = fun x -> f x in let a = g 1 in g true";
+    let expr = tiny_ml_core::parse(&tiny_ml_core::lex(source).unwrap()).unwrap();
+    assert_eq!(infer(&expr).unwrap_err().kind, ErrorKind::TypeMismatch);
+}
+
+#[test]
+fn polymorphic_aliases_and_shadowing() {
+    for source in [
+        "let id = fun x -> x in let alias = id in let a = alias 1 in alias true",
+        "let x = true in let x = x in x",
+    ] {
+        let expr = tiny_ml_core::parse(&tiny_ml_core::lex(source).unwrap()).unwrap();
+        assert_type_eq(infer(&expr).unwrap(), T::Bool);
+    }
 }
