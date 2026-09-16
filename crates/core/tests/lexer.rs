@@ -6,7 +6,6 @@ use tiny_ml_core::{
 };
 
 #[test]
-#[ignore = "exercise: lexer"]
 fn tokens_and_byte_spans() {
     assert_eq!(
         lex("let x = 12 in x + 3").unwrap(),
@@ -52,7 +51,6 @@ fn tokens_and_byte_spans() {
 }
 
 #[test]
-#[ignore = "exercise: lexer"]
 fn keywords_operators_and_keyword_prefixes() {
     let kinds: Vec<_> =
         lex("if true then false else let in fun -> = + - * / < ( ) letter ifx _x x2")
@@ -90,7 +88,6 @@ fn keywords_operators_and_keyword_prefixes() {
 }
 
 #[test]
-#[ignore = "exercise: lexer"]
 fn empty_and_ascii_whitespace() {
     for input in ["", " \t\r\n"] {
         assert_eq!(
@@ -104,7 +101,6 @@ fn empty_and_ascii_whitespace() {
 }
 
 #[test]
-#[ignore = "exercise: lexer"]
 fn invalid_character_has_utf8_byte_span() {
     let error = lex("1 + あ").unwrap_err();
     assert_eq!(error.stage, Stage::Lexer);
@@ -113,7 +109,6 @@ fn invalid_character_has_utf8_byte_span() {
 }
 
 #[test]
-#[ignore = "exercise: lexer"]
 fn integer_boundaries_and_separate_minus() {
     assert_eq!(
         lex("9223372036854775807").unwrap()[0].kind,
@@ -125,4 +120,32 @@ fn integer_boundaries_and_separate_minus() {
     );
     let kinds: Vec<_> = lex("-42").unwrap().into_iter().map(|t| t.kind).collect();
     assert_eq!(kinds, vec![K::Minus, K::Int(42), K::Eof]);
+}
+
+#[test]
+fn exact_whitespace_arrow_and_integer_spans() {
+    let tokens = lex("fun _->00042").unwrap();
+    assert_eq!(
+        tokens[2],
+        Token {
+            kind: K::Arrow,
+            span: Span::new(5, 7)
+        }
+    );
+    assert_eq!(
+        tokens[3],
+        Token {
+            kind: K::Int(42),
+            span: Span::new(7, 12)
+        }
+    );
+    for input in ["\u{b}", "\u{c}", "\u{a0}", "🙂"] {
+        let error = lex(input).unwrap_err();
+        assert_eq!(error.kind, ErrorKind::UnexpectedCharacter);
+        assert_eq!(error.span, Some(Span::new(0, input.len())));
+    }
+    assert_eq!(
+        lex(" 9223372036854775808").unwrap_err().span,
+        Some(Span::new(1, 20))
+    );
 }

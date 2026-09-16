@@ -7,7 +7,6 @@ use tiny_ml_core::{
 };
 
 #[test]
-#[ignore = "exercise: parser; lexer不要"]
 fn literal_from_handwritten_tokens() {
     let tokens = vec![
         Token {
@@ -25,7 +24,6 @@ fn literal_from_handwritten_tokens() {
 }
 
 #[test]
-#[ignore = "exercise: parser; lexer不要"]
 fn malformed_token_stream_returns_error() {
     assert_eq!(parse(&[]).unwrap_err().kind, ErrorKind::UnexpectedToken);
     assert_eq!(
@@ -47,7 +45,6 @@ fn malformed_token_stream_returns_error() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn multiplication_precedes_addition() {
     let result = parse(&lex("1 + 2 * 3").unwrap()).unwrap();
     assert_eq!(result.span, Span::new(0, 9));
@@ -70,7 +67,6 @@ fn multiplication_precedes_addition() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn arithmetic_is_left_associative() {
     let result = parse(&lex("8 - 3 - 1").unwrap()).unwrap();
     let E::Binary {
@@ -92,7 +88,6 @@ fn arithmetic_is_left_associative() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn application_is_left_associative_and_tight() {
     let result = parse(&lex("f x y + 1").unwrap()).unwrap();
     let E::Binary {
@@ -109,7 +104,6 @@ fn application_is_left_associative_and_tight() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn parentheses_and_negation() {
     let result = parse(&lex("-(1 + 2)").unwrap()).unwrap();
     assert_eq!(result.span, Span::new(0, 8));
@@ -131,7 +125,6 @@ fn parentheses_and_negation() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn let_function_and_conditional() {
     let result = parse(&lex("let f = fun x -> if x < 0 then 0 else x in f 2").unwrap()).unwrap();
     let E::Let { name, value, body } = result.kind else {
@@ -151,7 +144,6 @@ fn let_function_and_conditional() {
 }
 
 #[test]
-#[ignore = "exercise: lexer + parser"]
 fn rejects_syntax_errors_and_trailing_input() {
     for input in [
         "1 < 2 < 3",
@@ -167,4 +159,31 @@ fn rejects_syntax_errors_and_trailing_input() {
         assert_eq!(error.stage, Stage::Parser, "{input}");
         assert_eq!(error.kind, ErrorKind::UnexpectedToken, "{input}");
     }
+}
+
+#[test]
+fn negation_wraps_application_and_nested_forms_keep_spans() {
+    let expr = parse(&lex(" -f x ").unwrap()).unwrap();
+    assert_eq!(expr.span, Span::new(1, 5));
+    let E::Negate(inner) = expr.kind else {
+        panic!("expected negation")
+    };
+    assert!(matches!(inner.kind, E::Apply { .. }));
+    let expr = parse(&lex("((true))").unwrap()).unwrap();
+    assert_eq!(expr.span, Span::new(0, 8));
+    assert_eq!(expr.kind, E::Bool(true));
+    assert!(parse(&lex("let x = let y = 1 in y in if true then x else 0").unwrap()).is_ok());
+}
+
+#[test]
+fn errors_point_to_unexpected_token_or_missing_input() {
+    for (source, span) in [("1 )", Span::new(2, 3)), ("1 +", Span::new(3, 3))] {
+        assert_eq!(parse(&lex(source).unwrap()).unwrap_err().span, Some(span));
+    }
+    let mut tokens = lex("1").unwrap();
+    tokens.push(Token {
+        kind: K::Int(2),
+        span: Span::new(2, 3),
+    });
+    assert_eq!(parse(&tokens).unwrap_err().span, Some(Span::new(2, 3)));
 }

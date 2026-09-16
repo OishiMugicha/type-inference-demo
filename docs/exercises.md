@@ -1,6 +1,6 @@
 # 練習用テストの使い方
 
-初期状態の30件はすべて `#[ignore]` です。通常の `cargo test --workspace` は基盤テストだけを実行するため、まだ実装していなくても成功します。
+lexer・parserのテストは有効化済みです。型推論・評価器の練習用テストはまだ `#[ignore]` です。
 
 ## 段階を選んで実行
 
@@ -8,13 +8,13 @@
 
 ```sh
 # lexerの練習用テストをすべて実行
-cargo test -p tiny-ml-core --test lexer -- --ignored
+cargo test -p tiny-ml-core --test lexer
 
 # parserのうち、手書きTokenだけを使う1件を実行
-cargo test -p tiny-ml-core --test parser literal_from_handwritten_tokens -- --ignored
+cargo test -p tiny-ml-core --test parser literal_from_handwritten_tokens
 
 # parser全体。lexerを使うケースも含む
-cargo test -p tiny-ml-core --test parser -- --ignored
+cargo test -p tiny-ml-core --test parser
 
 # ASTから直接試す。lexer・parserは不要
 cargo test -p tiny-ml-core --test evaluation -- --ignored
