@@ -12,7 +12,6 @@ fn assert_int(expression: tiny_ml_core::ast::Expr, expected: i64) {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn arithmetic_and_comparison() {
     for (op, left, right, expected) in [
         (Op::Add, 2, 3, 5),
@@ -30,7 +29,6 @@ fn arithmetic_and_comparison() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn conditional_only_evaluates_selected_branch() {
     assert_int(
         branch(boolean(true), int(42), binary(Op::Divide, int(1), int(0))),
@@ -40,7 +38,6 @@ fn conditional_only_evaluates_selected_branch() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn binding_shadowing_and_closures() {
     assert_int(bind("x", int(1), bind("x", int(2), var("x"))), 2);
     assert_int(apply(fun("x", var("x")), int(42)), 42);
@@ -61,7 +58,6 @@ fn binding_shadowing_and_closures() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn higher_order_closure_retains_parameter() {
     let expression = apply(
         apply(
@@ -74,7 +70,6 @@ fn higher_order_closure_retains_parameter() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn call_by_value_and_left_to_right() {
     let zero_division = binary(Op::Divide, int(1), int(0));
     assert_eq!(
@@ -98,7 +93,6 @@ fn call_by_value_and_left_to_right() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn overflow_and_zero_division() {
     for expression in [
         binary(Op::Add, int(i64::MAX), int(1)),
@@ -116,7 +110,6 @@ fn overflow_and_zero_division() {
 }
 
 #[test]
-#[ignore = "exercise: evaluation; parser不要"]
 fn runtime_errors_without_type_inference() {
     let error = eval(&var("missing")).unwrap_err();
     assert_eq!(error.stage, Stage::Evaluation);
@@ -136,4 +129,33 @@ fn runtime_errors_without_type_inference() {
         eval(&bind("x", var("x"), var("x"))).unwrap_err().kind,
         ErrorKind::UnboundVariable
     );
+}
+
+#[test]
+fn evaluation_errors_precede_operand_and_callable_checks() {
+    for expression in [
+        binary(Op::Add, boolean(true), binary(Op::Divide, int(1), int(0))),
+        apply(int(1), binary(Op::Divide, int(1), int(0))),
+    ] {
+        assert_eq!(
+            eval(&expression).unwrap_err().kind,
+            ErrorKind::DivisionByZero
+        );
+    }
+    assert_int(
+        bind(
+            "x",
+            int(1),
+            bind("x", binary(Op::Add, var("x"), int(1)), var("x")),
+        ),
+        2,
+    );
+}
+
+#[test]
+fn runtime_error_keeps_source_position() {
+    let expr = tiny_ml_core::parse(&tiny_ml_core::lex("let x = 1 in x / 0").unwrap()).unwrap();
+    let error = eval(&expr).unwrap_err();
+    assert_eq!(error.kind, ErrorKind::DivisionByZero);
+    assert_eq!(error.span, Some(tiny_ml_core::span::Span::new(13, 18)));
 }
