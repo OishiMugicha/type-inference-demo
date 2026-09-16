@@ -10,8 +10,9 @@ test('実際のWasmがサブパスで読み込まれ、結果を繰り返し表�
   await page.getByLabel('MLの式').fill('42');
   await page.getByRole('button', { name: '実行する' }).click();
   await expect(page.getByRole('status')).toContainText('処理が完了');
-  // 実装が進んでも使える基盤テスト。初期状態では「未実装」、実装後は「成功」。
-  await expect(page.locator('[data-stage="tokens"] .badge')).toHaveText(/^(未実装|成功)$/);
+  await expect(page.locator('.badge[data-status="success"]')).toHaveCount(4);
+  await expect(page.locator('[data-stage="inferred_type"] pre')).toHaveText('int');
+  await expect(page.locator('[data-stage="value"] pre')).toHaveText('42');
   await expect(page.locator('[data-stage="tokens"] pre')).not.toBeEmpty();
   await expect(page.locator('.badge[data-status="error"]')).toHaveCount(0);
   await page.getByLabel('サンプル', { exact: true }).selectOption('2');
@@ -70,4 +71,28 @@ test('狭い画面で横にはみ出さず、キーボードから実行でき�
   await page.getByLabel('MLの式').press('Control+Enter');
   await expect(page.getByRole('status')).toContainText('処理が完了');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('let多相・クロージャ・段階別エラーを実際のWasmで処理する', async ({ page }) => {
+  await page.goto('./');
+  for (const [source, typeStatus, valueStatus, output] of [
+    ['let id = fun x -> x in let a = id 42 in id true', 'success', 'success', 'true'],
+    ['let x = 10 in let f = fun y -> x + y in let x = 100 in f 2', 'success', 'success', '12'],
+    ['if true then 42 else false', 'error', 'success', '42'],
+    ['1 / 0', 'success', 'error', 'ゼロ'],
+  ]) {
+    await page.getByLabel('MLの式').fill(source);
+    await page.getByRole('button', { name: '実行する' }).click();
+    await expect(page.getByRole('status')).toContainText('処理が完了');
+    await expect(page.locator('[data-stage="inferred_type"] .badge')).toHaveAttribute('data-status', typeStatus);
+    await expect(page.locator('[data-stage="value"] .badge')).toHaveAttribute('data-status', valueStatus);
+    await expect(page.locator('[data-stage="value"] pre')).toContainText(output);
+  }
+  for (const [source, stage, skipped] of [['@', 'tokens', 3], ['1 +', 'ast', 2]] as const) {
+    await page.getByLabel('MLの式').fill(source);
+    await page.getByRole('button', { name: '実行する' }).click();
+    await expect(page.getByRole('status')).toContainText('処理が完了');
+    await expect(page.locator(`[data-stage="${stage}"] .badge`)).toHaveAttribute('data-status', 'error');
+    await expect(page.locator('.badge[data-status="skipped"]')).toHaveCount(skipped);
+  }
 });

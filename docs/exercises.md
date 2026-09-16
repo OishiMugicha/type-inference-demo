@@ -1,13 +1,13 @@
-# 練習用テストの使い方
+# テストの実行方法
 
-lexer・parserのテストは有効化済みです。型推論・評価器の練習用テストはまだ `#[ignore]` です。
+全段階のテストを有効化しています。`cargo test --workspace --locked` で言語処理とWasm接続のテストを実行できます。
 
 ## 段階を選んで実行
 
 リポジトリのルートから実行してください。
 
 ```sh
-# lexerの練習用テストをすべて実行
+# lexerのテストをすべて実行
 cargo test -p tiny-ml-core --test lexer
 
 # parserのうち、手書きTokenだけを使う1件を実行
@@ -16,15 +16,15 @@ cargo test -p tiny-ml-core --test parser literal_from_handwritten_tokens
 # parser全体。lexerを使うケースも含む
 cargo test -p tiny-ml-core --test parser
 
-# ASTから直接試す。lexer・parserは不要
-cargo test -p tiny-ml-core --test evaluation -- --ignored
-cargo test -p tiny-ml-core --test inference -- --ignored
+# 型推論・評価器。手書きASTとソース入力の両方を検証
+cargo test -p tiny-ml-core --test evaluation
+cargo test -p tiny-ml-core --test inference
 
-# 有効化済み・未有効化の両方を実行
-cargo test -p tiny-ml-core -- --include-ignored
+# core全体を実行
+cargo test -p tiny-ml-core
 ```
 
-最初は未実装エラーで失敗するのが正常です。通ったテストの `#[ignore = "exercise: ..."]` を外すと、次から通常の `cargo test` とCIで検証されます。`--ignored` は外したテストを実行しないので、移行中は `--include-ignored` または通常実行も併用してください。
+すべて通常のテストとCIで検証されます。ASTを直接作るテストにより、型推論と評価器はlexer・parserから独立して検証できます。
 
 ## テストの内容
 
@@ -43,6 +43,6 @@ cargo test -p tiny-ml-core -- --include-ignored
 
 `npm run dev` を起動し、Rustを変更するたびに `npm run wasm:dev` を実行してブラウザを再読み込みします。
 
-lexerだけを実装すればToken、parserも実装すればASTが表示されます。型推論と評価器は独立して進められます。Webの「未実装」を消すために、正しい結果の代わりに仮の値を返す必要はありません。
+Token・AST・推論された型・評価結果が表示されます。型エラーの場合も評価器は独立して実行されます。
 
 通常のRustエラーは画面に表示されます。処理が戻らない場合は「中止」、panicでWorkerが使えなくなった場合は「再接続」を使ってください。panic後の再接続が難しい場合はページを再読み込みできます。
